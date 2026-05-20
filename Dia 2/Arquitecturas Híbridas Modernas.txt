@@ -1,0 +1,31 @@
+graph TD
+    Start([App solicita Balance]) --> CheckCache{"Existe Cache?"}
+
+    %% Flujo 1
+    CheckCache -->|Sí| BalHit[Muestra el Balance]
+    CheckCache -->|No| CheckCB1{"AS400 Abajo? "}
+
+    CheckCB1 -->|Sí| Fallback[Mostrar Ultimo Balance en Cache]
+    CheckCB1 -->|No| ReadAS400[Consulta en AS400]
+    
+    ReadAS400 --> WriteCache[Guarda balance en Caché]
+    WriteCache --> BalCore[Devuelve Balance]
+
+    BalHit --> ShowBalance(APP muestra Balance al Usuario)
+    Fallback --> ShowBalance
+    BalCore --> ShowBalance
+
+    %% Flujo  2
+    ShowBalance -->|Actualiza el Limite| ReqUpdate[App solicita Actualizar Límite]
+
+    %% Flujo 2
+    ReqUpdate --> CheckCB2{"AS400 Abajo?"}
+    
+    CheckCB2 -->|Sí| Reject[Mensaje de Error]
+    CheckCB2 -->|No| UpdateAS400[Escribe nuevo límite en AS400]
+    
+    UpdateAS400 --> Evict[Borrar en Caché]
+    Evict --> Success[Limite Actualizado]
+
+    Reject --> End([Fin])
+    Success --> End
